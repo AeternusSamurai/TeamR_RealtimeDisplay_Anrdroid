@@ -9,6 +9,7 @@ public class Asset {
     private Long ID;
     private double latitude;
     private double longitude;
+    private String title;
     private AssetType type;
     private String department;
     private String team;
@@ -41,6 +42,14 @@ public class Asset {
 
     public void setLongitude(double longitude) {
         this.longitude = longitude;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public AssetType getType() {

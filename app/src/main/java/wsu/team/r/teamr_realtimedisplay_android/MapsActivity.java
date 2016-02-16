@@ -1,5 +1,10 @@
 package wsu.team.r.teamr_realtimedisplay_android;
 
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.os.IBinder;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 
@@ -13,6 +18,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
+    private DatabaseConnectionService dbcService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,6 +30,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(this);
     }
 
+    private ServiceConnection connection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            dbcService = ((DatabaseConnectionService.LocalBinder)service).getService();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            dbcService = null;
+        }
+    };
+
+    private void bindService(){
+        bindService(new Intent(this, DatabaseConnectionService.class), connection, Context.BIND_AUTO_CREATE);
+    }
+
+    private void unbindService(){
+        unbindService(connection);
+    }
 
     /**
      * Manipulates the map once available.
