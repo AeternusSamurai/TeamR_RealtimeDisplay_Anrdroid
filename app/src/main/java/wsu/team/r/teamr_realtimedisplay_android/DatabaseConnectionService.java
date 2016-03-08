@@ -86,15 +86,19 @@ public class DatabaseConnectionService extends Service {
 
                     for(int i = 0; i < jAssets.length(); i++){
                         //Create asset object
+                        Asset a = new Asset();
 
                         JSONObject c = jAssets.getJSONObject(i);
                         JSONArray jNames = c.names();
                         for(int j = 0; j < jNames.length(); i++){
                             //Get values from the JSON objects
-                            jNames.getString(i);
+                            String name = jNames.getString(i);
+                            Object value = c.get(name);
+                            a.addData(name,value);
                         }
 
                         //Add the new asset to the list
+                        assets.add(a);
                     }
                 }
             }catch (JSONException e){
@@ -105,8 +109,11 @@ public class DatabaseConnectionService extends Service {
         }
 
         protected void onPostExecute(String s){
-            // broadcast that the assets have be retreived
-            // reset the timer for the next refresh time
+            // broadcast that the assets have be retrieved
         }
+    }
+
+    public List<Asset> getInfoAssets(){
+        return assets;
     }
 }

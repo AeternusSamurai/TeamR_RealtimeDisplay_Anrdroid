@@ -2,93 +2,46 @@ package wsu.team.r.teamr_realtimedisplay_android;
 
 import com.google.android.gms.maps.model.LatLng;
 
+import java.security.Key;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+
 /**
  * Created by Chase on 2/8/2016.
  */
 public class Asset {
-    private Long ID;
-    private double latitude;
-    private double longitude;
-    private String title;
-    private AssetType type;
-    private String department;
-    private String team;
-    private String status; // Here purely for proof of concept
-    private String goal;
+    private HashMap<String, Object> data;
 
-    public Long getID() {
-        return ID;
+    public Asset(){
+        data = new HashMap<>();
     }
 
-    public void setID(Long ID) {
-        this.ID = ID;
+    public void addData(String key, Object value){
+        data.put(key,value);
     }
 
-    public LatLng getLocation() {
-        return new LatLng(latitude,longitude);
+    public Object retrieveData(String key){
+        return data.get(key);
     }
 
-    public double getLatitude() {
-        return latitude;
+    public Double retrieveDoubleData(String key){
+        return (Double) data.get(key);
     }
 
-    public void setLatitude(double latitude) {
-        this.latitude = latitude;
+    public String retrieveStringData(String key){
+        return (String) data.get(key);
     }
 
-    public double getLongitude() {
-        return longitude;
+    public Integer retrieveIntegerData(String key){
+        return (Integer) data.get(key);
     }
 
-    public void setLongitude(double longitude) {
-        this.longitude = longitude;
+    public Long retrieveLongData(String key){
+        return (Long) data.get(key);
     }
 
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public AssetType getType() {
-        return type;
-    }
-
-    public void setType(AssetType type) {
-        this.type = type;
-    }
-
-    public String getDepartment() {
-        return department;
-    }
-
-    public void setDepartment(String department) {
-        this.department = department;
-    }
-
-    public String getTeam() {
-        return team;
-    }
-
-    public void setTeam(String team) {
-        this.team = team;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getGoal() {
-        return goal;
-    }
-
-    public void setGoal(String goal) {
-        this.goal = goal;
+    public List<String> getKeys(){
+        return new ArrayList<>(data.keySet());
     }
 }
