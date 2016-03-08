@@ -15,10 +15,21 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+//List View imports
+import android.widget.ExpandableListView;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import wsu.team.r.teamr_realtimedisplay_android.R;
+
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     private DatabaseConnectionService dbcService;
+
+    //List View variables
+    private ExpandableListView expandableListView;
+    private List<String>parentHeaderInformation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +39,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        //Expandable List View setup
+        parentHeaderInformation = new ArrayList<>();
+
+        //Parent label name
+        parentHeaderInformation.add("Police");
+        parentHeaderInformation.add("Fire Department");
+        parentHeaderInformation.add("Medical");
+        HashMap<String, List<String>> allChildItems = returnGroupedChildItems();
+        expandableListView = (ExpandableListView)findViewById(R.id.expandableListView);
+        ExpandableListViewAdapter expandableListViewAdapter = new ExpandableListViewAdapter(getApplicationContext(), parentHeaderInformation, allChildItems);
+        expandableListView.setAdapter(expandableListViewAdapter);
     }
 
     private ServiceConnection connection = new ServiceConnection() {
@@ -48,6 +71,37 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void unbindService(){
         unbindService(connection);
+    }
+
+    //List view methods
+    private HashMap<String, List<String>> returnGroupedChildItems(){
+        //ID, Location(Lat|Long), Name, Department
+        HashMap<String, List<String>> childContent = new HashMap<String, List<String>>();
+
+        //Child item label names
+        List<String> police = new ArrayList<>();
+        police.add("Police Name 1");
+        police.add("Police Name 2");
+        police.add("Police Name 3");
+        police.add("Police Name 4");
+
+        List<String> firedep = new ArrayList<>();
+        firedep.add("Fire Name 1");
+        firedep.add("Fire Name 2");
+        firedep.add("Fire Name 3");
+        firedep.add("Fire Name 4");
+
+        List<String> medical = new ArrayList<>();
+        medical.add("Medical Name 1");
+        medical.add("Medical Name 2");
+        medical.add("Medical Name 3");
+        medical.add("Medical Name 4");
+
+        childContent.put(parentHeaderInformation.get(0), police);
+        childContent.put(parentHeaderInformation.get(1), firedep);
+        childContent.put(parentHeaderInformation.get(2), medical);
+
+        return childContent;
     }
 
     /**
