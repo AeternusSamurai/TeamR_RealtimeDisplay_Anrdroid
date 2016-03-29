@@ -1,11 +1,13 @@
 package wsu.team.r.teamr_realtimedisplay_android;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.util.Pair;
 
 import org.json.JSONArray;
@@ -29,36 +31,43 @@ public class DatabaseConnectionService extends Service {
 
     private Timer timer;
 
-    public class LocalBinder extends Binder {
-        DatabaseConnectionService getService(){
-            return DatabaseConnectionService.this;
-        }
+    private static DatabaseConnectionService instance = null;
+
+    public static DatabaseConnectionService getInstance(){
+        return instance;
     }
 
     @Override
     public void onCreate() {
-        //Initial initalize list
-        assets = new ArrayList<>();
-        //get data from database
-        timer = new Timer();
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                new LoadAssets().execute();
-            }
-        }, 0, 60000);
 
+        super.onCreate();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        return START_NOT_STICKY;
+        Log.d("DATABASE_SERVICE", "THE SERVICE IS ON THE START COMMAND");
+        if(instance == null){
+            instance = this;
+        }
+        //Initial initalize list
+        assets = new ArrayList<>();
+        Log.d("DATABASE_SERVICE", "THE SERVICE IS BEING CREATED");
+        new LoadAssets().execute();
+        //get data from database
+//        timer = new Timer();
+//        timer.scheduleAtFixedRate(new TimerTask() {
+//            @Override
+//            public void run() {
+//                new LoadAssets().execute();
+//            }
+//        }, 0, 60000);
+        return START_STICKY;
     }
 
     @Override
     public void onDestroy() {
-        timer.cancel();
-        timer = null;
+//        timer.cancel();
+//        timer = null;
         // run a backup of the data in case of network connection lose
         super.onDestroy();
     }
@@ -67,18 +76,16 @@ public class DatabaseConnectionService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return binder;
+        return null;
     }
-
-    private final IBinder binder = new LocalBinder();
 
     class LoadAssets extends AsyncTask<String, String, String>{
         protected String doInBackground(String... args){
             List<Pair<String,String>> params = new ArrayList<>();
 
             //TODO get the url to connect to the database web sevice.
-            JSONObject json = parser.makeHttpRequest("","GET",params);
-
+            JSONObject json = parser.makeHttpRequest("http://groupq.cs.wright.edu/test.php","GET",params);
+            assets.clear();
             try{
                 int success = json.getInt("success");
                 if(success == 1){
@@ -90,9 +97,9 @@ public class DatabaseConnectionService extends Service {
 
                         JSONObject c = jAssets.getJSONObject(i);
                         JSONArray jNames = c.names();
-                        for(int j = 0; j < jNames.length(); i++){
+                        for(int j = 0; j < jNames.length(); j++){
                             //Get values from the JSON objects
-                            String name = jNames.getString(i);
+                            String name = jNames.getString(j);
                             Object value = c.get(name);
                             a.addData(name,value);
                         }
@@ -110,10 +117,14 @@ public class DatabaseConnectionService extends Service {
 
         protected void onPostExecute(String s){
             // broadcast that the assets have be retrieved
+            Intent refresh = new Intent("REFRESH_MARKERS");
+            sendBroadcast(refresh);
         }
     }
 
     public List<Asset> getInfoAssets(){
         return assets;
     }
+
+
 }

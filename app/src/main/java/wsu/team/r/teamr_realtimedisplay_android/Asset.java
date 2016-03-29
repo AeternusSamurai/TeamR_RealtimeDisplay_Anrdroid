@@ -26,7 +26,7 @@ public class Asset {
     }
 
     public Double retrieveDoubleData(String key){
-        return (Double) data.get(key);
+        return Double.parseDouble((String) data.get(key));
     }
 
     public String retrieveStringData(String key){
@@ -34,14 +34,26 @@ public class Asset {
     }
 
     public Integer retrieveIntegerData(String key){
-        return (Integer) data.get(key);
+        return Integer.parseInt((String) data.get(key));
     }
 
     public Long retrieveLongData(String key){
-        return (Long) data.get(key);
+        return Long.parseLong((String) data.get(key));
     }
 
     public List<String> getKeys(){
         return new ArrayList<>(data.keySet());
+    }
+
+    public String getDisplayInfo(){
+        String temp = (String) data.get("Name");
+        return temp;
+    }
+
+    public String getExtraInfo(){
+        String temp = "";
+        temp += (String) data.get("Department") + "\n";
+        temp += "Lat: " + data.get("Latitude") + "Lng: " + data.get("Longitude");
+        return temp;
     }
 }

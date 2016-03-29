@@ -25,6 +25,10 @@ public class ExpandableListViewAdapter extends BaseExpandableListAdapter {
 
     }
 
+    public void setChildDataSource(HashMap<String, List<String>> dataSource){
+        childDataSource = dataSource;
+    }
+
     @Override
     public int getGroupCount() {
 
@@ -82,10 +86,15 @@ public class ExpandableListViewAdapter extends BaseExpandableListAdapter {
         if(view == null){
             LayoutInflater inflater = (LayoutInflater)this.context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             view = inflater.inflate(R.layout.parent_layout, parent, false);
+
+            ViewHolder holder = new ViewHolder();
+            holder.text = (TextView) view.findViewById(R.id.parent_layout);
+            view.setTag(holder);
         }
 
+        ViewHolder holder = (ViewHolder)view.getTag();
         String parentHeader = (String)getGroup(groupPosition);
-        TextView parentItem = (TextView)view.findViewById(R.id.parent_layout);
+        TextView parentItem = holder.text;
         parentItem.setText(parentHeader);
         return view;
 
@@ -101,11 +110,17 @@ public class ExpandableListViewAdapter extends BaseExpandableListAdapter {
             LayoutInflater inflater = (LayoutInflater)this.context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             view = inflater.inflate(R.layout.child_layout, parent, false);
 
+            ViewHolder holder = new ViewHolder();
+            holder.text = (TextView) view.findViewById(R.id.child_layout);
+            view.setTag(holder);
+
         }
 
+        ViewHolder holder = (ViewHolder) view.getTag();
         String childName = (String)getChild(groupPosition, childPosition);
-        TextView childItem = (TextView)view.findViewById(R.id.child_layout);
+        TextView childItem = holder.text;
         childItem.setText(childName);
+        childItem.setId(childPosition);
         return view;
 
     }
@@ -115,6 +130,14 @@ public class ExpandableListViewAdapter extends BaseExpandableListAdapter {
 
         return true;
 
+    }
+
+    class ViewHolder{
+        public ViewHolder(){
+
+        }
+
+        public TextView text;
     }
 
 }
