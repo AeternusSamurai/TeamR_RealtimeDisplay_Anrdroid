@@ -52,22 +52,22 @@ public class DatabaseConnectionService extends Service {
         //Initial initalize list
         assets = new ArrayList<>();
         Log.d("DATABASE_SERVICE", "THE SERVICE IS BEING CREATED");
-        new LoadAssets().execute();
+//        new LoadAssets().execute();
         //get data from database
-//        timer = new Timer();
-//        timer.scheduleAtFixedRate(new TimerTask() {
-//            @Override
-//            public void run() {
-//                new LoadAssets().execute();
-//            }
-//        }, 0, 60000);
+        timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                new LoadAssets().execute();
+            }
+        }, 0, 60000);
         return START_STICKY;
     }
 
     @Override
     public void onDestroy() {
-//        timer.cancel();
-//        timer = null;
+        timer.cancel();
+        timer = null;
         // run a backup of the data in case of network connection lose
         super.onDestroy();
     }
@@ -80,10 +80,16 @@ public class DatabaseConnectionService extends Service {
     }
 
     class LoadAssets extends AsyncTask<String, String, String>{
+
+        @Override
+        protected void onPreExecute() {
+            Intent updateMessage = new Intent("UPDATING_ASSETS");
+            sendBroadcast(updateMessage);
+        }
+
         protected String doInBackground(String... args){
             List<Pair<String,String>> params = new ArrayList<>();
 
-            //TODO get the url to connect to the database web sevice.
             JSONObject json = parser.makeHttpRequest("http://groupq.cs.wright.edu/test.php","GET",params);
             assets.clear();
             try{

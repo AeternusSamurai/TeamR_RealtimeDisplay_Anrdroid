@@ -29,6 +29,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ExpandableListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,6 +55,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private int child = 0;
 
     private RefreshReceiver refreshReceiver;
+    private UpdateReceiver updateReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +69,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         dbcService = DatabaseConnectionService.getInstance();
         refreshReceiver = new RefreshReceiver();
+        updateReceiver = new UpdateReceiver();
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -102,12 +105,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onResume() {
         registerReceiver(refreshReceiver, new IntentFilter("REFRESH_MARKERS"));
+        registerReceiver(updateReceiver, new IntentFilter("UPDATING_ASSETS"));
         super.onResume();
     }
 
     @Override
     protected void onPause() {
         unregisterReceiver(refreshReceiver);
+        unregisterReceiver(updateReceiver);
         super.onPause();
     }
 
@@ -327,10 +332,25 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         @Override
         public void onReceive(Context context, Intent intent) {
             if(intent.getAction().equals("REFRESH_MARKERS")) {
+                Toast.makeText(context,"Asset information updated", Toast.LENGTH_LONG).show();
                 childItems = returnGroupedChildItems();
                 expandableListViewAdapter.setChildDataSource(childItems);
                 expandableListViewAdapter.notifyDataSetChanged();
                 displayMarkers(parent, child);
+            }
+        }
+    }
+
+    public class UpdateReceiver extends BroadcastReceiver{
+
+        public UpdateReceiver(){
+
+        }
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals("UPDATING_ASSETS")){
+                Toast.makeText(context,"Updating asset information...", Toast.LENGTH_LONG).show();
             }
         }
     }
