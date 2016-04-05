@@ -63,7 +63,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent database = new Intent(this, DatabaseConnectionService.class);
-
         startService(database);
         setContentView(R.layout.activity_main);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -99,6 +98,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         parentHeaderInformation.add("Fire Department");
         parentHeaderInformation.add("Medical");
         parentHeaderInformation.add("FBI");
+        parentHeaderInformation.add("Other");
         childItems = returnGroupedChildItems();
         expandableListView = (ExpandableListView) findViewById(R.id.expandableListView);
         expandableListViewAdapter = new ExpandableListViewAdapter(getApplicationContext(), parentHeaderInformation, childItems);
@@ -188,7 +188,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             Set<String> medicalSet = new HashSet<>();
 
             List<String> fbi = new ArrayList<>();
+            List<String> other = new ArrayList<>();
+            Set<String> otherSet = new HashSet<>();
             fbi.add("All");
+            other.add("All");
             medical.add("All");
             police.add("All");
             firedep.add("All");
@@ -200,12 +203,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     policeSet.add(asset.retrieveStringData("Department"));
                 } else if (asset.retrieveStringData("Department").contains("EMS") || asset.retrieveStringData("Department").contains("Emergency Medical Services")) {
                     medicalSet.add(asset.retrieveStringData("Department"));
+                } else {
+                    if (!asset.retrieveStringData("Department").equals("FBI")) {
+                        otherSet.add(asset.retrieveStringData("Department"));
+                    }
                 }
             }
 
             police.addAll(policeSet);
             firedep.addAll(firedepSet);
             medical.addAll(medicalSet);
+            other.addAll(otherSet);
 
 
             for (int i = 0; i < parentHeaderInformation.size(); i++) {
@@ -231,6 +239,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     case 4:
                         // FBI Filter: display by FBI
                         childContent.put(parentHeaderInformation.get(i), fbi);
+                        break;
+                    case 5:
+                        // Other filter
+                        childContent.put(parentHeaderInformation.get(i), other);
                         break;
                     default:
                         // do nothing
@@ -260,6 +272,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         break;
                     case 4:
                         // FBI Filter: display by FBI
+                        childContent.put(parentHeaderInformation.get(i), allArr);
+                        break;
+                    case 5:
+                        // Other filter
                         childContent.put(parentHeaderInformation.get(i), allArr);
                         break;
                     default:
@@ -326,6 +342,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             .title(asset.getDisplayInfo())
                             .snippet(asset.getExtraInfo())
                             .icon(color));
+                }
+            } else if (parent.equals("Other")) {
+                for(Asset asset : dbcService.getInfoAssets()){
+                    if(childItems.get(parent).contains(asset.retrieveStringData("Department"))){
+                        double lat = asset.retrieveDoubleData("Latitude");
+                        double lng = asset.retrieveDoubleData("Longitude");
+                        BitmapDescriptor color = getDepartmentColor(asset.retrieveStringData("Department"));
+                        mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(lat, lng))
+                                .title(asset.getDisplayInfo())
+                                .snippet(asset.getExtraInfo())
+                                .icon(color));
+                    }
                 }
             } else {
                 if (chld.equals("All")) {
@@ -405,17 +434,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    private BitmapDescriptor getDepartmentColor(String department){
+    private BitmapDescriptor getDepartmentColor(String department) {
         BitmapDescriptor color = null;
-        if(department.contains("Fire Department") || department.contains("Fire")){
+        if (department.contains("Fire Department") || department.contains("Fire")) {
             color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED);
-        }else if(department.contains("Police Department") || department.contains("Police")){
+        } else if (department.contains("Police Department") || department.contains("Police")) {
             color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE);
-        }else if(department.contains("EMS") || department.contains("Emergency Medial Services")){
+        } else if (department.contains("EMS") || department.contains("Emergency Medial Services")) {
             color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
-        }else if(department.contains("FBI")){
+        } else if (department.contains("FBI")) {
             color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET);
-        }else{
+        } else {
             color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW);
         }
         return color;
