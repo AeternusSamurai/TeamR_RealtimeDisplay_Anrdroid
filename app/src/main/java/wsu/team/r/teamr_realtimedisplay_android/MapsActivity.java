@@ -1,25 +1,14 @@
 package wsu.team.r.teamr_realtimedisplay_android;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.DialogFragment;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
-import android.os.IBinder;
-import android.support.annotation.Nullable;
-import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
-
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.CameraPosition;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
-
-//List View imports
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -31,13 +20,24 @@ import android.view.View;
 import android.widget.ExpandableListView;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
-import wsu.team.r.teamr_realtimedisplay_android.R;
+//List View imports
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, ExpandableListView.OnChildClickListener {
 
@@ -57,10 +57,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private RefreshReceiver refreshReceiver;
     private UpdateReceiver updateReceiver;
 
+    private boolean keepService;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        startService(new Intent(this, DatabaseConnectionService.class));
+        Intent database = new Intent(this, DatabaseConnectionService.class);
+
+        startService(database);
         setContentView(R.layout.activity_main);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -122,7 +126,25 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            super.onBackPressed();
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("Do you want to stop the asset retrieval service?")
+                    .setTitle("Close Asset Retrieval Service")
+                    .setCancelable(false)
+                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            stopService(new Intent(getApplicationContext(), DatabaseConnectionService.class));
+                            finish();
+                        }
+                    })
+                    .setNeutralButton("No", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            finish();
+                        }
+                    });
+            AlertDialog alert = builder.create();
+            alert.show();
         }
     }
 
@@ -138,6 +160,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         int id = item.getItemId();
 
         if (id == R.id.action_settings) {
+            startActivity(new Intent(this, SettingsActivity.class));
             return true;
         }
 
@@ -151,7 +174,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         HashMap<String, List<String>> childContent = new HashMap<String, List<String>>();
         dbcService = DatabaseConnectionService.getInstance();
         //List<Asset> assets = new ArrayList<>();
-        if(dbcService != null) {
+        if (dbcService != null) {
             List<Asset> assets = dbcService.getInfoAssets();
 
             //Child item label names
@@ -270,7 +293,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     protected void onDestroy() {
-        stopService(new Intent(this, DatabaseConnectionService.class));
         super.onDestroy();
     }
 
@@ -292,13 +314,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         this.parent = group;
         this.child = child;
 
-        if(dbcService != null) {
+        if (dbcService != null) {
             if (parent.equals("All")) {
                 // display all of the assets
                 for (Asset asset : dbcService.getInfoAssets()) {
                     double lat = asset.retrieveDoubleData("Latitude");
                     double lng = asset.retrieveDoubleData("Longitude");
-                    mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lng)).title(asset.getDisplayInfo()).snippet(asset.getExtraInfo()));
+                    BitmapDescriptor color = getDepartmentColor(asset.retrieveStringData("Department"));
+                    mMap.addMarker(new MarkerOptions()
+                            .position(new LatLng(lat, lng))
+                            .title(asset.getDisplayInfo())
+                            .snippet(asset.getExtraInfo())
+                            .icon(color));
                 }
             } else {
                 if (chld.equals("All")) {
@@ -307,7 +334,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         if (asset.retrieveStringData("Department").contains(parent)) {
                             double lat = asset.retrieveDoubleData("Latitude");
                             double lng = asset.retrieveDoubleData("Longitude");
-                            mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lng)).title(asset.getDisplayInfo()).snippet(asset.getExtraInfo()));
+                            BitmapDescriptor color = getDepartmentColor(asset.retrieveStringData("Department"));
+                            mMap.addMarker(new MarkerOptions()
+                                    .position(new LatLng(lat, lng))
+                                    .title(asset.getDisplayInfo())
+                                    .snippet(asset.getExtraInfo())
+                                    .icon(color));
                         }
                     }
                 } else {
@@ -315,24 +347,42 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         if (asset.retrieveStringData("Department").equals(chld)) {
                             double lat = asset.retrieveDoubleData("Latitude");
                             double lng = asset.retrieveDoubleData("Longitude");
-                            mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lng)).title(asset.getDisplayInfo()).snippet(asset.getExtraInfo()));
+                            BitmapDescriptor color = getDepartmentColor(asset.retrieveStringData("Department"));
+                            mMap.addMarker(new MarkerOptions()
+                                    .position(new LatLng(lat, lng))
+                                    .title(asset.getDisplayInfo())
+                                    .snippet(asset.getExtraInfo())
+                                    .icon(color));
                         }
                     }
                 }
             }
+            Random rnd = new Random();
+            int randLocation = rnd.nextInt(dbcService.getInfoAssets().size());
+            LatLng zoomLoc = new LatLng(dbcService.getInfoAssets().get(randLocation).retrieveDoubleData("Latitude"), dbcService.getInfoAssets().get(randLocation).retrieveDoubleData("Longitude"));
+            CameraPosition cameraPosition = new CameraPosition.Builder().target(zoomLoc).zoom(15).build();
+            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
         }
     }
 
+
     public class RefreshReceiver extends BroadcastReceiver {
 
-        public RefreshReceiver(){
+        public RefreshReceiver() {
 
         }
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(intent.getAction().equals("REFRESH_MARKERS")) {
-                Toast.makeText(context,"Asset information updated", Toast.LENGTH_LONG).show();
+            if (intent.getAction().equals("REFRESH_MARKERS")) {
+                ConnectionStatus cs = (ConnectionStatus) intent.getSerializableExtra("CONNECTION_STATUS");
+                if (cs == ConnectionStatus.GOOD) {
+                    Toast.makeText(context, "Asset information updated", Toast.LENGTH_LONG).show();
+                } else if (cs == ConnectionStatus.NO_CONNECTION) {
+                    Toast.makeText(context, "Unable to retrieve updated assets: No connection", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(context, "No connection to the server: Connection timeout", Toast.LENGTH_LONG).show();
+                }
                 childItems = returnGroupedChildItems();
                 expandableListViewAdapter.setChildDataSource(childItems);
                 expandableListViewAdapter.notifyDataSetChanged();
@@ -341,17 +391,33 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    public class UpdateReceiver extends BroadcastReceiver{
+    public class UpdateReceiver extends BroadcastReceiver {
 
-        public UpdateReceiver(){
+        public UpdateReceiver() {
 
         }
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(intent.getAction().equals("UPDATING_ASSETS")){
-                Toast.makeText(context,"Updating asset information...", Toast.LENGTH_LONG).show();
+            if (intent.getAction().equals("UPDATING_ASSETS")) {
+                Toast.makeText(context, "Updating asset information...", Toast.LENGTH_LONG).show();
             }
         }
+    }
+
+    private BitmapDescriptor getDepartmentColor(String department){
+        BitmapDescriptor color = null;
+        if(department.contains("Fire Department") || department.contains("Fire")){
+            color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED);
+        }else if(department.contains("Police Department") || department.contains("Police")){
+            color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE);
+        }else if(department.contains("EMS") || department.contains("Emergency Medial Services")){
+            color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
+        }else if(department.contains("FBI")){
+            color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET);
+        }else{
+            color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW);
+        }
+        return color;
     }
 }

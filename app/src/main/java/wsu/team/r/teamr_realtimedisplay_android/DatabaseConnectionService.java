@@ -3,9 +3,11 @@ package wsu.team.r.teamr_realtimedisplay_android;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.util.Pair;
@@ -14,6 +16,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -32,6 +37,7 @@ public class DatabaseConnectionService extends Service {
     private Timer timer;
 
     private static DatabaseConnectionService instance = null;
+    private ConnectionStatus connectionStatus;
 
     public static DatabaseConnectionService getInstance(){
         return instance;
@@ -48,9 +54,9 @@ public class DatabaseConnectionService extends Service {
         Log.d("DATABASE_SERVICE", "THE SERVICE IS ON THE START COMMAND");
         if(instance == null){
             instance = this;
+            assets = new ArrayList<>();
         }
         //Initial initalize list
-        assets = new ArrayList<>();
         Log.d("DATABASE_SERVICE", "THE SERVICE IS BEING CREATED");
 //        new LoadAssets().execute();
         //get data from database
@@ -90,32 +96,43 @@ public class DatabaseConnectionService extends Service {
         protected String doInBackground(String... args){
             List<Pair<String,String>> params = new ArrayList<>();
 
-            JSONObject json = parser.makeHttpRequest("http://groupq.cs.wright.edu/test.php","GET",params);
-            assets.clear();
-            try{
-                int success = json.getInt("success");
-                if(success == 1){
-                    jAssets = json.getJSONArray("assets");
+            try {
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                String url = prefs.getString("server_url", "");
+                JSONObject json = parser.makeHttpRequest("http://groupq.cs.wright.edu/test.php", "GET", params);
+                connectionStatus = ConnectionStatus.GOOD;
+                if (json != null) {
+                    assets.clear();
+                    try {
+                        int success = json.getInt("success");
+                        if (success == 1) {
+                            jAssets = json.getJSONArray("assets");
 
-                    for(int i = 0; i < jAssets.length(); i++){
-                        //Create asset object
-                        Asset a = new Asset();
+                            for (int i = 0; i < jAssets.length(); i++) {
+                                //Create asset object
+                                Asset a = new Asset();
 
-                        JSONObject c = jAssets.getJSONObject(i);
-                        JSONArray jNames = c.names();
-                        for(int j = 0; j < jNames.length(); j++){
-                            //Get values from the JSON objects
-                            String name = jNames.getString(j);
-                            Object value = c.get(name);
-                            a.addData(name,value);
+                                JSONObject c = jAssets.getJSONObject(i);
+                                JSONArray jNames = c.names();
+                                for (int j = 0; j < jNames.length(); j++) {
+                                    //Get values from the JSON objects
+                                    String name = jNames.getString(j);
+                                    Object value = c.get(name);
+                                    a.addData(name, value);
+                                }
+
+                                //Add the new asset to the list
+                                assets.add(a);
+                            }
                         }
-
-                        //Add the new asset to the list
-                        assets.add(a);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
                 }
-            }catch (JSONException e){
-                e.printStackTrace();
+            }catch (ConnectException | SocketTimeoutException e){
+                connectionStatus = ConnectionStatus.CONNECTION_TIMEOUT;
+            }catch (UnknownHostException e){
+                connectionStatus = ConnectionStatus.NO_CONNECTION;
             }
 
             return null;
@@ -124,6 +141,7 @@ public class DatabaseConnectionService extends Service {
         protected void onPostExecute(String s){
             // broadcast that the assets have be retrieved
             Intent refresh = new Intent("REFRESH_MARKERS");
+            refresh.putExtra("CONNECTION_STATUS", connectionStatus);
             sendBroadcast(refresh);
         }
     }

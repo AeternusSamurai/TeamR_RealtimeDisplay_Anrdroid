@@ -52,8 +52,7 @@ public class Asset {
 
     public String getExtraInfo(){
         String temp = "";
-        temp += (String) data.get("Department") + "\n";
-        temp += "Lat: " + data.get("Latitude") + "Lng: " + data.get("Longitude");
+        temp += (String) data.get("Department");
         return temp;
     }
 }

@@ -11,9 +11,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.net.URLEncoder;
 
@@ -27,7 +30,7 @@ public class JSONParser {
 
     public JSONParser(){}
 
-    public JSONObject makeHttpRequest(String url, String method, List<Pair<String,String>> params){
+    public JSONObject makeHttpRequest(String url, String method, List<Pair<String,String>> params) throws ConnectException, UnknownHostException, SocketTimeoutException{
         URL urlCon;
         HttpURLConnection http = null;
         try{
@@ -40,6 +43,7 @@ public class JSONParser {
                 http = (HttpURLConnection) urlCon.openConnection();
                 http.setRequestMethod(method);
                 http.setDoInput(true);
+                http.setConnectTimeout(50000); // trying to not overlap
                 http.connect();
                 is = http.getInputStream();
             }
@@ -49,6 +53,18 @@ public class JSONParser {
         }catch (MalformedURLException e) {
             // That's a badly formed url
             e.printStackTrace();
+        }catch(ConnectException e) {
+            // The connection timed out
+            Log.e("JSONParser", "The connection to " + url + " timed out \n" + e.getMessage());
+            throw e;
+        }catch (UnknownHostException e){
+            // There is absolutely no connection
+            Log.e("JSONParser", "There is no connection present");
+            throw e;
+        }catch (SocketTimeoutException e){
+            // The forced timeout
+            Log.e("JSONParser", "The forced timeout: No connection");
+            throw e;
         }catch (IOException e){
             // Something happened
             e.printStackTrace();
