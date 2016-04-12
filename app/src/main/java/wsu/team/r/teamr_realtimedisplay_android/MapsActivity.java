@@ -386,11 +386,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                 }
             }
-            Random rnd = new Random();
-            int randLocation = rnd.nextInt(dbcService.getInfoAssets().size());
-            LatLng zoomLoc = new LatLng(dbcService.getInfoAssets().get(randLocation).retrieveDoubleData("Latitude"), dbcService.getInfoAssets().get(randLocation).retrieveDoubleData("Longitude"));
-            CameraPosition cameraPosition = new CameraPosition.Builder().target(zoomLoc).zoom(15).build();
-            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+            if(!dbcService.getInfoAssets().isEmpty() && dbcService != null) {
+                Random rnd = new Random();
+                int randLocation = rnd.nextInt(dbcService.getInfoAssets().size());
+                LatLng zoomLoc = new LatLng(dbcService.getInfoAssets().get(randLocation).retrieveDoubleData("Latitude"), dbcService.getInfoAssets().get(randLocation).retrieveDoubleData("Longitude"));
+                CameraPosition cameraPosition = new CameraPosition.Builder().target(zoomLoc).zoom(15).build();
+                mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+            }
         }
     }
 
