@@ -99,7 +99,7 @@ public class DatabaseConnectionService extends Service {
             try {
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
                 String url = prefs.getString("server_url", "");
-                JSONObject json = parser.makeHttpRequest("http://groupq.cs.wright.edu/test.php", "GET", params);
+                JSONObject json = parser.makeHttpRequest(url, "GET", params);
                 connectionStatus = ConnectionStatus.GOOD;
                 if (json != null) {
                     assets.clear();

@@ -93,13 +93,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onStart() {
         super.onStart();
         dbcService = DatabaseConnectionService.getInstance();
-        parentHeaderInformation.add("All");
-        parentHeaderInformation.add("Police");
-        parentHeaderInformation.add("Fire Department");
-        parentHeaderInformation.add("Medical");
-        parentHeaderInformation.add("FBI");
-        parentHeaderInformation.add("Other");
-        childItems = returnGroupedChildItems();
+        if(parentHeaderInformation.isEmpty()) {
+            parentHeaderInformation.add("All");
+            parentHeaderInformation.add("Police");
+            parentHeaderInformation.add("Fire Department");
+            parentHeaderInformation.add("Medical");
+            parentHeaderInformation.add("FBI");
+            parentHeaderInformation.add("Other");
+            childItems = returnGroupedChildItems();
+        }
         expandableListView = (ExpandableListView) findViewById(R.id.expandableListView);
         expandableListViewAdapter = new ExpandableListViewAdapter(getApplicationContext(), parentHeaderInformation, childItems);
         expandableListView.setAdapter(expandableListViewAdapter);
@@ -142,7 +144,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         public void onClick(DialogInterface dialog, int which) {
                             finish();
                         }
-                    });
+                    }).setCancelable(false);
             AlertDialog alert = builder.create();
             alert.show();
         }
